@@ -1,0 +1,241 @@
+==================================================
+ALERTCREATOR DEPLOYMENT PROCEDURE (GLPI 11.x)
+==================================================
+
+PREREQUISITES:
+- GLPI Path: /var/www/html/glpi
+- Plugin: /var/www/html/glpi/plugins/alertcreator
+- Web User: www-data
+- GLPI already functional
+
+--------------------------------------------------
+0. PLUGIN CODE DEPLOYMENT
+--------------------------------------------------
+
+# Copy the plugin folder to the new instance
+# (example using rsync or scp, adapt to your context):
+# rsync -avz alertcreator/ root@server:/var/www/html/glpi/plugins/alertcreator
+
+# Verify plugin presence
+ls -l /var/www/html/glpi/plugins/alertcreator
+
+# Adjust permissions (CRITICAL for proper operation)
+chown -R www-data:www-data /var/www/html/glpi/plugins/alertcreator
+
+--------------------------------------------------
+1. ENABLE THE PLUGIN IN GLPI
+--------------------------------------------------
+
+NOTE: Activation automatically creates the necessary SQL table.
+
+GLPI Interface:
+1. Go to: Configuration → Plugins
+2. On the "AlertCreator" line:
+   - Click "Install" (creates the glpi_plugin_alertcreator_alerts table)
+   - Then click "Enable"
+
+--------------------------------------------------
+2. MAKE JS ACCESSIBLE (GLPI 11, public/)
+--------------------------------------------------
+
+mkdir -p /var/www/html/glpi/public/plugins/alertcreator/js
+
+ln -s /var/www/html/glpi/plugins/alertcreator/js/alertcreator.js \
+      /var/www/html/glpi/public/plugins/alertcreator/js/alertcreator.js
+
+ls -l /var/www/html/glpi/public/plugins/alertcreator/js
+
+--------------------------------------------------
+3. INSTALL AND ENABLE CRON
+--------------------------------------------------
+
+apt update
+apt install -y cron
+systemctl enable --now cron
+systemctl status cron
+
+--------------------------------------------------
+4. INSTALL MSMTP
+--------------------------------------------------
+
+apt update
+apt install -y msmtp-mta ca-certificates
+
+# Verify sendmail
+ls -l /usr/sbin/sendmail
+which sendmail
+
+--------------------------------------------------
+5. MSMTP SYSTEM CONFIG: /etc/msmtprc
+--------------------------------------------------
+
+nano /etc/msmtprc
+
+Sample content (adapt domain / account / password, example for o365):
+
+# /etc/msmtprc
+
+defaults
+auth           on
+tls            on
+tls_starttls   on
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
+logfile        /var/log/msmtp.log
+
+account        o365
+host           smtp.office365.com
+port           587
+user           usersmtp@your-domain.tld
+password       YOUR_SMTP_PASSWORD
+from           mail@your-domain.tld
+
+account default : o365
+
+# Permissions
+chown root:root /etc/msmtprc
+chmod 644 /etc/msmtprc
+
+--------------------------------------------------
+6. MSMTP LOG FILE
+--------------------------------------------------
+
+touch /var/log/msmtp.log
+chown www-data:www-data /var/log/msmtp.log
+chmod 640 /var/log/msmtp.log
+
+--------------------------------------------------
+7. WWW-DATA USER MSMTP CONFIG: /var/www/.msmtprc
+--------------------------------------------------
+
+touch /var/www/.msmtprc
+chown www-data:www-data /var/www/.msmtprc
+chmod 600 /var/www/.msmtprc
+
+# Optional: pre-fill for initial testing
+sudo -u www-data nano /var/www/.msmtprc
+
+(Use the same content as in step 5)
+
+--------------------------------------------------
+8. MSMTP / MAIL() TESTS
+--------------------------------------------------
+
+8.1. Root msmtp test
+-----------------------
+printf "Subject: Test via msmtp (root)\n\nMessage body.\n" \
+  | sendmail -v your.mail@your-domain.tld
+
+→ Expected: 250 2.0.0 OK + email received.
+
+8.2. www-data msmtp test
+---------------------------
+sudo -u www-data printf "Subject: Test via msmtp (www-data)\n\nMessage body.\n" \
+  | sudo -u www-data sendmail -v your.mail@your-domain.tld
+
+→ Check that it correctly uses /var/www/.msmtprc in /var/log/msmtp.log.
+
+8.3. CLI mail() test under www-data
+-------------------------------------
+cd /var/www/html/glpi
+sudo -u www-data php -r 'var_dump(mail("your.mail@your-domain.tld","PHP mail test via www-data","This is a test from php -r;"));'
+
+→ Expected: bool(true) + email received.
+
+--------------------------------------------------
+9. CONFIGURE THE PLUGIN CRON SCRIPT
+--------------------------------------------------
+
+9.1. Make the script executable (MANDATORY)
+----------------------------------------------
+chmod +x /var/www/html/glpi/plugins/alertcreator/scripts/alertcreator_cron.php
+
+9.2. Configure DB connection
+----------------------------------------------
+nano /var/www/html/glpi/plugins/alertcreator/scripts/alertcreator_cron.php
+
+$host = 'localhost';            
+$name = 'glpi';                  
+$user = 'glpi_user';            // ADAPT THIS
+$pass = 'MY_PASSWORD';          // ADAPT THIS
+
+9.3. Add system cron job
+----------------------------
+nano /etc/crontab
+
+Add the following line (runs every minute):
+* * * * * www-data /var/www/html/glpi/plugins/alertcreator/scripts/alertcreator_cron.php >/dev/null 2>&1
+
+Save.
+
+9.4. Manual script test
+--------------------------
+sudo -u www-data /var/www/html/glpi/plugins/alertcreator/scripts/alertcreator_cron.php
+
+→ No errors should appear.
+→ Check logs: tail -n 5 /var/log/glpi/alertcreator_cron_debug.log
+
+--------------------------------------------------
+10. SET SERVER TIME (TZ)
+--------------------------------------------------
+
+timedatectl set-timezone Europe/Paris
+systemctl restart apache2
+
+--------------------------------------------------
+11. PLUGIN CONFIGURATION IN GLPI
+--------------------------------------------------
+
+GLPI Interface → Configuration → Plugins → AlertCreator → Configure.
+
+11.1. License
+-------------
+- Activate the license to unlock logs, cleanup, and unlimited use.
+
+11.2. SMTP
+----------
+- Configure the info (Host, Port, User, Pass) identical to MSMTP.
+- smtp_from : mail@your-domain.tld
+
+11.3. Parameters
+----------------
+- from_email : mail@your-domain.tld
+- base_url : https://my-glpi.tld (for clickable links)
+- logo_url : Public logo URL (https://...)
+
+11.4. Saving
+--------------------
+- Click "Save". This updates the database configuration 
+  and regenerates /var/www/.msmtprc.
+
+--------------------------------------------------
+12. ADMINISTRATION FUNCTIONS
+--------------------------------------------------
+
+- View logs: Verify that PHP logs (cron) and system logs (msmtp) are reporting correctly.
+- Clear alerts: Allows cleaning the SQL table if needed.
+
+--------------------------------------------------
+13. FULL FUNCTIONAL TEST
+--------------------------------------------------
+
+1. Open a GLPI ticket.
+2. Click the "Create an alert" button.
+3. Enter:
+   - Recipient email
+   - Reminder date/time: Set to current time + 2 minutes.
+   - Message
+4. Validate.
+
+Database Verification (Optional):
+SELECT reminder_datetime, sent FROM glpi_plugin_alertcreator_alerts ORDER BY id DESC LIMIT 1;
+(Note: reminder_datetime will be stored in UTC, which is normal for GLPI 11).
+
+Expected Result:
+1. Wait for the scheduled time.
+2. The email is received at the correct time (local time).
+3. The link in the email opens the correct ticket.
+4. In the ticket ("Tasks" tab), a private task "Alert created..." is present.
+
+==================================================
+END OF PROCEDURE
+==================================================

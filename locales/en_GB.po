@@ -1,0 +1,324 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: AlertCreator 1.0\n"
+"POT-Creation-Date: 2026-01-02 20:30+0100\n"
+"PO-Revision-Date: 2026-01-02 20:30+0100\n"
+"Last-Translator: COREFORGE\n"
+"Language-Team: English\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.0\n"
+
+msgid "Méthode non autorisée"
+msgstr "Method not allowed"
+
+msgid "Données manquantes ou invalides"
+msgstr "Missing or invalid data"
+
+msgid "Adresse e-mail invalide"
+msgstr "Invalid email address"
+
+msgid "Format de date invalide"
+msgstr "Invalid date format"
+
+msgid "Quota gratuit atteint : maximum 3 alertes créées sans licence. Veuillez activer une licence pour continuer."
+msgstr "Free quota reached: maximum 3 alerts created without a license. Please activate a license to continue."
+
+msgid "Alerte créée pour ce ticket."
+msgstr "Alert created for this ticket."
+
+msgid "Destinataire :"
+msgstr "Recipient:"
+
+msgid "Rappel prévu :"
+msgstr "Scheduled reminder:"
+
+msgid "Message :"
+msgstr "Message:"
+
+msgid "Alerte planifiée pour %s"
+msgstr "Alert scheduled for %s"
+
+msgid "Exception PHP"
+msgstr "PHP Exception"
+
+msgid "Erreur lors de l’activation de la licence."
+msgstr "Error while activating the license."
+
+msgid "La consultation des logs AlertCreator est réservée aux installations avec une licence valide."
+msgstr "Consulting AlertCreator logs is restricted to installations with a valid license."
+
+msgid "Table des alertes vidée (%d enregistrements supprimés)."
+msgstr "Alerts table cleared (%d records deleted)."
+
+msgid "Erreur lors du vidage de la table des alertes :"
+msgstr "Error while clearing the alerts table:"
+
+msgid "Licence valable jusqu’au %s."
+msgstr "License valid until %s."
+
+msgid "Logo uploadé avec succès."
+msgstr "Logo uploaded successfully."
+
+msgid "Échec du déplacement du fichier uploadé."
+msgstr "Failed to move uploaded file."
+
+msgid "Format de fichier non autorisé."
+msgstr "File format not allowed."
+
+msgid "Logo supprimé avec succès."
+msgstr "Logo deleted successfully."
+
+msgid "Le serveur SMTP ne doit pas être vide."
+msgstr "SMTP server must not be empty."
+
+msgid "Le port SMTP doit être un entier."
+msgstr "SMTP port must be an integer."
+
+msgid "Le nom d’utilisateur SMTP ne doit pas être vide."
+msgstr "SMTP username must not be empty."
+
+msgid "L’adresse e-mail d’expéditeur SMTP est invalide."
+msgstr "SMTP sender email address is invalid."
+
+msgid "L’adresse e-mail d’expéditeur des alertes est invalide."
+msgstr "Alerts sender email address is invalid."
+
+msgid "Le mot de passe SMTP est vide. Renseigne-le au moins une fois."
+msgstr "SMTP password is empty. Please provide it at least once."
+
+msgid "L’URL de base GLPI est invalide."
+msgstr "GLPI base URL is invalid."
+
+msgid "Configuration enregistrée, mais impossible d’écrire %s (droits ?)."
+msgstr "Configuration saved, but unable to write %s (permissions?)."
+
+msgid "Configuration AlertCreator et %s mis à jour."
+msgstr "AlertCreator configuration and %s updated."
+
+msgid "Configuration AlertCreator"
+msgstr "AlertCreator Configuration"
+
+msgid "Plugin en mode complet : alertes illimitées."
+msgstr "Plugin in full mode: unlimited alerts."
+
+msgid "Plugin en mode gratuit : limité à 3 alertes planifiées sans licence."
+msgstr "Plugin in free mode: limited to 3 scheduled alerts without a license."
+
+msgid "Voir les logs"
+msgstr "View logs"
+
+msgid "Disponible uniquement avec une licence valide"
+msgstr "Only available with a valid license"
+
+msgid "Licence"
+msgstr "License"
+
+msgid "État de la licence"
+msgstr "License status"
+
+msgid "Licence active."
+msgstr "License active."
+
+msgid "Mode gratuit : licence non activée."
+msgstr "Free mode: license not activated."
+
+msgid "Limité à 3 alertes."
+msgstr "Limited to 3 alerts."
+
+msgid "Activer la licence"
+msgstr "Activate license"
+
+msgid "Paramètres SMTP (msmtp)"
+msgstr "SMTP settings (msmtp)"
+
+msgid "Serveur SMTP"
+msgstr "SMTP Server"
+
+msgid "Port"
+msgstr "Port"
+
+msgid "TLS"
+msgstr "TLS"
+
+msgid "STARTTLS"
+msgstr "STARTTLS"
+
+msgid "Utilisateur SMTP"
+msgstr "SMTP User"
+
+msgid "Mot de passe SMTP"
+msgstr "SMTP Password"
+
+msgid "Laisser vide pour conserver"
+msgstr "Leave empty to keep current"
+
+msgid "Adresse from SMTP"
+msgstr "SMTP From address"
+
+msgid "Paramètres des alertes"
+msgstr "Alert settings"
+
+msgid "Adresse e-mail expéditeur alertes"
+msgstr "Alerts sender email address"
+
+msgid "Préfixe du sujet"
+msgstr "Subject prefix"
+
+msgid "Paramètres d’affichage des mails"
+msgstr "Email display settings"
+
+msgid "URL de base GLPI"
+msgstr "GLPI base URL"
+
+msgid "Logo dans les mails"
+msgstr "Logo in emails"
+
+msgid "Supprimer"
+msgstr "Delete"
+
+msgid "Logo actuel"
+msgstr "Current logo"
+
+msgid "Cochez ✕ Supprimer et enregistrez pour le retirer."
+msgstr "Check ✕ Delete and save to remove it."
+
+msgid "Formats : PNG, JPG, GIF, WEBP, SVG (max 10 Mo)"
+msgstr "Formats: PNG, JPG, GIF, WEBP, SVG (max 10 MB)"
+
+msgid "Enregistrer"
+msgstr "Save"
+
+msgid "Fichier non lisible ou vide."
+msgstr "File unreadable or empty."
+
+msgid "Aucun log récent."
+msgstr "No recent logs."
+
+msgid "Logs AlertCreator (10 dernières lignes)"
+msgstr "AlertCreator Logs (last 10 lines)"
+
+msgid "Cron AlertCreator"
+msgstr "AlertCreator Cron"
+
+msgid "Attention : « Vider les alertes » supprimera toutes les alertes en base."
+msgstr "Warning: \"Clear alerts\" will delete all alerts from the database."
+
+msgid "Confirmer la suppression de toutes les alertes ?"
+msgstr "Confirm deletion of all alerts?"
+
+msgid "Vider les alertes"
+msgstr "Clear alerts"
+
+msgid "Fermer"
+msgstr "Close"
+
+msgid "Confirmer la suppression du logo actuel ?"
+msgstr "Confirm deletion of current logo?"
+
+msgid "Aucune licence trouvée (fichier ou configuration)."
+msgstr "No license found (file or configuration)."
+
+msgid "Erreur de vérification :"
+msgstr "Verification error:"
+
+msgid "Clé de licence vide."
+msgstr "Empty license key."
+
+msgid "Erreur lors de la vérification de la licence :"
+msgstr "Error during license verification:"
+
+msgid "Clé publique invalide (Base64)."
+msgstr "Invalid public key (Base64)."
+
+msgid "Extension sodium requise pour vérifier la licence."
+msgstr "Sodium extension required to verify license."
+
+msgid "Format de licence invalide (séparateur manquant)."
+msgstr "Invalid license format (missing separator)."
+
+msgid "Licence corrompue (Base64 invalide)."
+msgstr "Corrupted license (invalid Base64)."
+
+msgid "Signature de licence invalide."
+msgstr "Invalid license signature."
+
+msgid "Payload JSON invalide dans la licence."
+msgstr "Invalid JSON payload in license."
+
+msgid "Cette licence ne correspond pas à ce plugin."
+msgstr "This license does not match this plugin."
+
+msgid "Champ expires_at manquant dans la licence."
+msgstr "Missing expires_at field in license."
+
+msgid "Date d'expiration invalide dans la licence."
+msgstr "Invalid expiration date in license."
+
+msgid "Licence expirée."
+msgstr "License expired."
+
+msgid "Valide jusqu'au %s"
+msgstr "Valid until %s"
+
+msgid "Champ domain manquant dans la licence."
+msgstr "Missing domain field in license."
+
+msgid "Domaine non autorisé. Licence pour \"%s\", instance actuelle : \"%s\"."
+msgstr "Unauthorized domain. License for \"%s\", current instance: \"%s\"."
+
+msgid "Domaine autorisé :"
+msgstr "Authorized domain:"
+
+msgid "Domaine non vérifié (contexte CLI/CRON, HTTP_HOST vide)."
+msgstr "Domain not verified (CLI/CRON context, empty HTTP_HOST)."
+
+msgid "Nouveau"
+msgstr "New"
+
+msgid "Attribué"
+msgstr "Assigned"
+
+msgid "Planifié"
+msgstr "Planned"
+
+msgid "En attente"
+msgstr "Pending"
+
+msgid "Résolu"
+msgstr "Solved"
+
+msgid "Clos"
+msgstr "Closed"
+
+msgid "Ticket #%d"
+msgstr "Ticket #%d"
+
+msgid "Nouvelle alerte sur votre ticket"
+msgstr "New alert on your ticket"
+
+msgid "Bonjour,"
+msgstr "Hello,"
+
+msgid "Une alerte a été créée sur votre ticket."
+msgstr "An alert has been created for your ticket."
+
+msgid "Ticket :"
+msgstr "Ticket:"
+
+msgid "Statut :"
+msgstr "Status:"
+
+msgid "Date prévue pour l'action :"
+msgstr "Scheduled date for action:"
+
+msgid "Détail de l'alerte"
+msgstr "Alert details"
+
+msgid "Voir le ticket"
+msgstr "View ticket"
+
+msgid "AlertCreator"
+msgstr "AlertCreator"

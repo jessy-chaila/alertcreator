@@ -1,11 +1,13 @@
 <?php
 
-// Fichier : plugins/alertcreator/front/alert.ajax.php
-// Planifie une alerte (enregistrement en base) ET crée une tâche privée dans le ticket
+/**
+ * Plugin AlertCreator - File: alert.ajax.php
+ * Schedules an alert (database record) AND creates a private task in the ticket.
+ */
 
 require dirname(__DIR__, 3) . '/inc/includes.php';
 
-// Forcer le fuseau horaire pour rester cohérent avec le cron
+// Force timezone consistency with the cron job
 date_default_timezone_set('Europe/Paris');
 
 header('Content-Type: application/json; charset=UTF-8');
@@ -13,7 +15,7 @@ header('Content-Type: application/json; charset=UTF-8');
 try {
    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
       http_response_code(405);
-      echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
+      echo json_encode(['success' => false, 'message' => __('Méthode non autorisée', 'alertcreator')]);
       exit;
    }
 
@@ -24,48 +26,47 @@ try {
 
    if ($ticket_id <= 0 || empty($target_email) || empty($reminder_date) || empty($message)) {
       http_response_code(400);
-      echo json_encode(['success' => false, 'message' => 'Données manquantes ou invalides']);
+      echo json_encode(['success' => false, 'message' => __('Données manquantes ou invalides', 'alertcreator')]);
       exit;
    }
 
    if (!filter_var($target_email, FILTER_VALIDATE_EMAIL)) {
       http_response_code(400);
-      echo json_encode(['success' => false, 'message' => 'Adresse e-mail invalide']);
+      echo json_encode(['success' => false, 'message' => __('Adresse e-mail invalide', 'alertcreator')]);
       exit;
    }
 
-   // Le champ datetime-local renvoie typiquement : 2025-12-13T17:49
+   // Validate datetime-local format: YYYY-MM-DDTHH:MM
    if (!preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $reminder_date)) {
       http_response_code(400);
-      echo json_encode(['success' => false, 'message' => 'Format de date invalide']);
+      echo json_encode(['success' => false, 'message' => __('Format de date invalide', 'alertcreator')]);
       exit;
    }
 
-   // ----- Contrôle licence / quota de créations d’alerte -----
-   // Si pas de licence valide : max 3 alertes créées au total
+   // ----- License / Alert quota check -----
+   // If no valid license: maximum 3 alerts allowed
    $license = PluginAlertcreatorLicense::getStatus();
 
    if (empty($license['valid'])) {
-      // Utilisation du helper GLPI pour compter
       $count = countElementsInTable('glpi_plugin_alertcreator_alerts');
 
       if ($count >= 3) {
          http_response_code(403);
          echo json_encode([
             'success' => false,
-            'message' => "Quota gratuit atteint : maximum 3 alertes créées sans licence. Veuillez activer une licence pour continuer.",
+            'message' => __("Quota gratuit atteint : maximum 3 alertes créées sans licence. Veuillez activer une licence pour continuer.", 'alertcreator'),
          ]);
          exit;
       }
    }
 
-   // On enregistre tel quel, sans conversion de fuseau
+   // Prepare date format for database insertion
    $reminder_datetime = str_replace('T', ' ', $reminder_date) . ':00';
    $now               = date('Y-m-d H:i:s');
 
    global $DB;
 
-   // ---------- 1) Insertion de l’alerte dans la table du plugin ----------
+   // ---------- 1) Alert insertion into plugin table ----------
 
    $DB->insertOrDie('glpi_plugin_alertcreator_alerts', [
       'tickets_id'        => $ticket_id,
@@ -77,26 +78,25 @@ try {
       'updated_at'        => $now,
    ]);
 
-   // ---------- 2) Création d’une tâche privée dans le ticket ----------
+   // ---------- 2) Create a private task in the ticket ----------
 
    $taskContent =
-      "Alerte créée pour ce ticket.\n" .
-      "Destinataire : {$target_email}.\n" .
-      "Rappel prévu : {$reminder_datetime}.\n\n" .
-      "Message :\n{$message}\n";
+      __('Alerte créée pour ce ticket.', 'alertcreator') . "\n" .
+      __('Destinataire :', 'alertcreator') . " {$target_email}.\n" .
+      __('Rappel prévu :', 'alertcreator') . " {$reminder_datetime}.\n\n" .
+      __('Message :', 'alertcreator') . "\n{$message}\n";
 
    $task = new TicketTask();
 
-   // On laisse GLPI gérer entité, utilisateur courant, etc.
    $input = [
       'tickets_id' => $ticket_id,
       'content'    => $taskContent,
-      'is_private' => 1,   // tâche privée
-      'state'      => 2,   // 2 = fait (simple trace d’info)
+      'is_private' => 1, // Private task
+      'state'      => 2, // 2 = Done (information log)
       'actiontime' => 0,
    ];
 
-   // Associer la tâche à l’utilisateur connecté si disponible
+   // Associate task with current logged-in user if available
    $user_id = Session::getLoginUserID();
    if ($user_id) {
       $input['users_id'] = $user_id;
@@ -106,13 +106,13 @@ try {
 
    echo json_encode([
       'success' => true,
-      'message' => 'Alerte planifiée pour ' . $reminder_datetime,
+      'message' => sprintf(__('Alerte planifiée pour %s', 'alertcreator'), $reminder_datetime),
    ]);
 } catch (Throwable $e) {
    http_response_code(500);
    echo json_encode([
       'success' => false,
-      'message' => 'Exception PHP',
+      'message' => __('Exception PHP', 'alertcreator'),
       'error'   => $e->getMessage(),
    ]);
 }
