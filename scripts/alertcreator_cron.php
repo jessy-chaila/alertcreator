@@ -1,28 +1,32 @@
 #!/usr/bin/php
 <?php
-// Script CLI : envoi des alertes planifiées du plugin AlertCreator
-// À lancer via cron sous l'utilisateur www-data
 
-// Racine GLPI
-define('GLPI_ROOT', dirname(__DIR__, 3)); // /var/www/html/glpi
+/**
+ * Plugin AlertCreator - File: scripts/alertcreator_cron.php
+ * CLI Script: Sends scheduled alerts for the AlertCreator plugin.
+ * Should be run via cron under the www-data user.
+ */
 
-// Forcer le fuseau horaire du script PHP (pour les logs et l'affichage mail)
+// GLPI Root path
+define('GLPI_ROOT', dirname(__DIR__, 3));
+
+// Force PHP timezone for logs and email display
 date_default_timezone_set('Europe/Paris');
 
 // ------------------------------------------------------------
-// 1) Paramètres de connexion SQL GLPI
-// => À ADAPTER une seule fois selon /etc/glpi/config_db.php
+// 1) GLPI SQL Connection Parameters
+// Adapt according to /etc/glpi/config_db.php
 // ------------------------------------------------------------
-$host = 'localhost';            // hôte MySQL/MariaDB
-$name = 'glpi';                 // nom de la base GLPI
-$user = 'glpi';            // utilisateur DB GLPI
-$pass = 'glpi'; // mot de passe de cet utilisateur
+$host = 'localhost';             // MySQL/MariaDB host
+$name = 'glpi';                  // GLPI database name
+$user = 'glpi_user';             // GLPI DB user
+$pass = 'VF56Cg1qtF5cmGjIFqaEaqyR'; // User password
 
 // ------------------------------------------------------------
-// NE RIEN MODIFIER EN DESSOUS, sauf si tu sais ce que tu fais
+// DO NOT MODIFY BELOW THIS LINE
 // ------------------------------------------------------------
 
-// ---------- Connexion PDO à la base GLPI ----------
+// ---------- PDO Connection to GLPI DB ----------
 $dsn = "mysql:host={$host};dbname={$name};charset=utf8mb4";
 try {
    $pdo = new PDO($dsn, $user, $pass, [
@@ -30,8 +34,8 @@ try {
       PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
    ]);
 
-   // --- CORRECTION HEURE (GLPI 11+) ---
-   // On force la session MySQL en UTC pour lire les TIMESTAMP bruts stockés par GLPI
+   // --- TIMEZONE CORRECTION (GLPI 11+) ---
+   // Force MySQL session to UTC to read raw TIMESTAMPs stored by GLPI
    $pdo->exec("SET time_zone = '+00:00'");
 
 } catch (PDOException $e) {
@@ -40,7 +44,7 @@ try {
 }
 
 // ---------------------------------------------------------------------
-// 2) Charger la config AlertCreator depuis glpi_configs (context=plugin_alertcreator)
+// 2) Load AlertCreator config from glpi_configs
 // ---------------------------------------------------------------------
 $pluginContext = 'plugin_alertcreator';
 $from_email_default = '';
@@ -52,7 +56,7 @@ $smtp_from_email = '';
 $plugin_base_url = '';
 $plugin_logo_url = '';
 
-// Lecture des clés pertinentes dans glpi_configs
+// Fetch relevant configuration keys
 $stmtConf = $pdo->prepare("
    SELECT name, value
    FROM glpi_configs
@@ -94,23 +98,20 @@ while ($row = $stmtConf->fetch()) {
    }
 }
 
-// Si pas de from_email défini, on tombe sur smtp_from
+// Fallback to smtp_from if from_email is not defined
 if (empty($from_email) && !empty($smtp_from_email)) {
    $from_email = $smtp_from_email;
 }
 
-// URL de base effective : plugin_base_url (sinon liens relatifs)
-$base_url = $plugin_base_url; 
-// Logo : URL complète issue de la config plugin (sinon pas de logo)
+$base_url = $plugin_base_url;
 $logo_url = $plugin_logo_url;
 
 // ---------------------------------------------------------------------
-// 2bis) Écriture d'un log de debug dans un répertoire système de logs
+// 2bis) Debug logging
 // ---------------------------------------------------------------------
-$log_dir = '/var/log/glpi'; // À adapter si besoin
+$log_dir = '/var/log/glpi'; 
 $cron_log_path = $log_dir . '/alertcreator_cron_debug.log';
 
-// Créer le répertoire de logs s'il n'existe pas
 if (!is_dir($log_dir)) {
    @mkdir($log_dir, 0770, true);
 }
@@ -123,16 +124,13 @@ $debug_line = sprintf(
    $logo_url ?: '(vide)'
 );
 
-// Tenter d'écrire le fichier (pas bloquant si ça échoue)
 @file_put_contents($cron_log_path, $debug_line, FILE_APPEND);
 
-
 // ---------------------------------------------------------------------
-// 3) Récupérer les alertes à envoyer
+// 3) Fetch alerts to send
 // ---------------------------------------------------------------------
 
-// --- CORRECTION HEURE (GLPI 11+) ---
-// On utilise gmdate() pour avoir l'heure UTC actuelle et comparer avec la base UTC
+// Use gmdate() for current UTC time to compare with UTC database values
 $now = gmdate('Y-m-d H:i:s');
 
 $sqlAlerts = "
@@ -149,11 +147,10 @@ $stmtAlerts->execute([':now' => $now]);
 $alerts = $stmtAlerts->fetchAll();
 
 if (!$alerts) {
-   // Rien à faire
    exit(0);
 }
 
-// Préparer les requêtes pour réutiliser les statements
+// Prepare statements for reuse
 $stmtTicket = $pdo->prepare("
    SELECT name, status
    FROM glpi_tickets
@@ -169,27 +166,27 @@ $stmtUpdate = $pdo->prepare("
    WHERE id = :id
 ");
 
-// Statuts GLPI simplifiés (optionnel, juste informatif)
+// GLPI Status mapping
 $statusMap = [
-   1 => 'Nouveau',
-   2 => 'Attribué',
-   3 => 'Planifié',
-   4 => 'En attente',
-   5 => 'Résolu',
-   6 => 'Clos',
+   1 => __('Nouveau', 'alertcreator'),
+   2 => __('Attribué', 'alertcreator'),
+   3 => __('Planifié', 'alertcreator'),
+   4 => __('En attente', 'alertcreator'),
+   5 => __('Résolu', 'alertcreator'),
+   6 => __('Clos', 'alertcreator'),
 ];
 
 // ---------------------------------------------------------------------
-// 4) Boucle d'envoi
+// 4) Sending loop
 // ---------------------------------------------------------------------
 foreach ($alerts as $alert) {
    $alert_id = (int)$alert['id'];
    $ticket_id = (int)$alert['tickets_id'];
    $target_email = $alert['target_email'];
-   $reminder_dt_utc = $alert['reminder_datetime']; // valeur UTC brute
+   $reminder_dt_utc = $alert['reminder_datetime']; 
    $message = $alert['message'];
 
-   // Conversion UTC -> Europe/Paris pour affichage dans le mail
+   // Convert UTC to local timezone for email display
    try {
       $dt = new DateTime($reminder_dt_utc, new DateTimeZone('UTC'));
       $dt->setTimezone(new DateTimeZone('Europe/Paris'));
@@ -198,10 +195,10 @@ foreach ($alerts as $alert) {
       $reminder_dt_local = $reminder_dt_utc;
    }
 
-   // Récupération des infos ticket
+   // Fetch ticket information
    $ticket_title = '';
    $ticket_status = '';
-   
+
    $stmtTicket->execute([':id' => $ticket_id]);
    $trow = $stmtTicket->fetch();
 
@@ -210,25 +207,25 @@ foreach ($alerts as $alert) {
       $status_id = (int)($trow['status'] ?? 0);
       $ticket_status = $statusMap[$status_id] ?? 'N/A';
    } else {
-      $ticket_title = "Ticket #{$ticket_id}";
+      $ticket_title = sprintf(__('Ticket #%d', 'alertcreator'), $ticket_id);
       $ticket_status = 'N/A';
    }
 
-   // ---------- ENVOI HTML ----------
+   // ---------- HTML EMAIL PREPARATION ----------
    $subject = sprintf(
       '%s - Ticket #%d',
       $subject_prefix,
       $ticket_id
    );
 
-   // URL du ticket : absolue si base_url renseignée, sinon relative
+   // Ticket URL: absolute if base_url is set, otherwise relative
    if (!empty($base_url)) {
       $ticket_url = rtrim($base_url, '/') . "/front/ticket.form.php?id=" . $ticket_id;
    } else {
       $ticket_url = "/front/ticket.form.php?id=" . $ticket_id;
    }
 
-   // Préparer le HTML
+   // Sanitize and prepare HTML content
    $safe_message = nl2br(htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
    $safe_reminder_date = htmlspecialchars($reminder_dt_local, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
    $safe_ticket_title = htmlspecialchars($ticket_title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -264,7 +261,7 @@ foreach ($alerts as $alert) {
          background-color: #ffffff;
       }
       .logo-container img {
-         max-height: 80px;   /* Logo plus petit */
+         max-height: 80px;
          width: auto;
          height: auto;
       }
@@ -326,7 +323,6 @@ foreach ($alerts as $alert) {
    <div class="container">
 HTML;
 
-   // Logo centré en haut (plus petit)
    if (!empty($safe_logo_url)) {
       $body .= <<<HTML
       <div class="logo-container">
@@ -335,28 +331,27 @@ HTML;
 HTML;
    }
 
-   // Titre principal sous le logo
    $body .= <<<HTML
       <div class="title-header">
-         <h1>Nouvelle alerte sur votre ticket</h1>
+         <h1>{$__('Nouvelle alerte sur votre ticket', 'alertcreator')}</h1>
       </div>
       <div class="content">
-         <p>Bonjour,</p>
-         <p>Une alerte a été créée sur votre ticket.</p>
+         <p>{$__('Bonjour,', 'alertcreator')}</p>
+         <p>{$__('Une alerte a été créée sur votre ticket.', 'alertcreator')}</p>
          <div class="ticket-info">
-            <p><strong>Ticket :</strong>
+            <p><strong>{$__('Ticket :', 'alertcreator')}</strong>
                <a href="{$safe_ticket_url}">{$safe_ticket_title}</a>
             </p>
-            <p><strong>Statut :</strong> {$safe_ticket_status}</p>
-            <p><strong>Date prévue pour l'action :</strong> {$safe_reminder_date}</p>
+            <p><strong>{$__('Statut :', 'alertcreator')}</strong> {$safe_ticket_status}</p>
+            <p><strong>{$__('Date prévue pour l\'action :', 'alertcreator')}</strong> {$safe_reminder_date}</p>
          </div>
-         <h3 class="centered">Détail de l'alerte</h3>
+         <h3 class="centered">{$__('Détail de l\'alerte', 'alertcreator')}</h3>
          <div class="ticket-info">
-            <p><strong>Message :</strong></p>
+            <p><strong>{$__('Message :', 'alertcreator')}</strong></p>
             <p>{$safe_message}</p>
          </div>
          <p class="centered">
-            <a class="button" href="{$safe_ticket_url}">Voir le ticket</a>
+            <a class="button" href="{$safe_ticket_url}">{$__('Voir le ticket', 'alertcreator')}</a>
          </p>
       </div>
       <div class="footer">
@@ -367,7 +362,7 @@ HTML;
 </html>
 HTML;
 
-   // Envoi HTML
+   // Send HTML Email
    if (!empty($from_email)) {
       ini_set('sendmail_from', $from_email);
    }
@@ -381,10 +376,9 @@ HTML;
 
    $ok = mail($target_email, $subject, $body, $headers);
 
-   // ---------- Mise à jour de l'alerte ----------
-   // On utilise gmdate pour enregistrer l'heure d'envoi en UTC dans la DB
+   // ---------- Update alert status in DB ----------
    $now_update = gmdate('Y-m-d H:i:s');
-   
+
    $sent_val = $ok ? 1 : 0;
    $sent_at_val = $ok ? $now_update : null;
    $last_error_val = $ok ? null : ('mail() failed at ' . $now_update);

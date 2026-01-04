@@ -1,17 +1,24 @@
+/**
+ * Plugin AlertCreator - File: js/alertcreator.js
+ */
+
 document.addEventListener('DOMContentLoaded', function () {
-  // On ne fait quelque chose que sur les formulaires de ticket
+  // Only execute on ticket forms
   if (!window.location.pathname.includes('ticket.form.php')) {
     return;
   }
 
-  // Affichage du message après reload
+  // Display message after page reload if stored in session
   const lastMsg = sessionStorage.getItem('alertcreator_last_message');
   if (lastMsg) {
     alert(lastMsg);
     sessionStorage.removeItem('alertcreator_last_message');
   }
 
-  // Crée le modal si besoin
+  /**
+   * Creates the alert modal if it doesn't already exist
+   * @param {number} ticketId 
+   */
   function createModalIfNeeded(ticketId) {
     let modal = document.getElementById('alertcreator-modal');
     if (modal) {
@@ -20,6 +27,7 @@ document.addEventListener('DOMContentLoaded', function () {
       return modal;
     }
 
+    // Modal HTML structure with strings ready for internationalization
     const modalHtml = `
 <div class="modal fade" id="alertcreator-modal" tabindex="-1" aria-labelledby="alertcreator-modal-label" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -75,6 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const root = window.CFG_GLPI ? CFG_GLPI.root_doc : '';
       const url = root + '/plugins/alertcreator/front/alert.ajax.php';
 
+      // Send alert data via AJAX
       fetch(url, {
         method: 'POST',
         body: payload,
@@ -107,6 +116,9 @@ document.addEventListener('DOMContentLoaded', function () {
     return modal;
   }
 
+  /**
+   * Injects the alert creation button into the ticket's main actions menu
+   */
   function injectAlertButton() {
     const dropdownMenu = document.querySelector('.main-actions .dropdown-menu');
     if (!dropdownMenu) return false;
@@ -126,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function () {
       <span>Créer une alerte</span>
     `;
 
-    // Au hover : texte en gras (comme les autres items GLPI)
+    // Hover effect: font-weight bold (matching GLPI standards)
     alertLink.addEventListener('mouseenter', () => {
       alertLink.style.fontWeight = '600';
     });
@@ -146,11 +158,12 @@ document.addEventListener('DOMContentLoaded', function () {
     return true;
   }
 
-  // Injection rapide
+  // Fast injection attempt
   if (!injectAlertButton()) {
     let attempts = 0;
     const interval = setInterval(() => {
       attempts++;
+      // Stop trying after 15 attempts (~3 seconds)
       if (injectAlertButton() || attempts > 15) {
         clearInterval(interval);
       }

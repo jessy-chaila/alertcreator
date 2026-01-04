@@ -1,0 +1,13 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: fr_FR\n"
+
+msgid "État de la licence"
+msgstr "État de la licence"
+
+msgid "Licence"
+msgstr "Licence"
+
+msgid "Configuration AlertCreator"
+msgstr "Configuration AlertCreator"
