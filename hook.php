@@ -5,54 +5,65 @@
  */
 
 /**
- * Installation hook for the plugin.
- * Creates the necessary database tables and constraints.
- *
- * @return bool
+ * Plugin installation process
+ * @return boolean
  */
 function plugin_alertcreator_install() {
    global $DB;
 
+   // 1. Table creation (if needed)
+   $migration = new Migration(100);
    if (!$DB->tableExists('glpi_plugin_alertcreator_alerts')) {
-      $migration = new Migration(100);
-      
-      // SQL query to create the alerts table with foreign key constraint
       $query = "CREATE TABLE `glpi_plugin_alertcreator_alerts` (
-         `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-         `tickets_id` INT UNSIGNED NOT NULL,
-         `target_email` VARCHAR(255) NOT NULL,
-         `reminder_datetime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-         `message` TEXT NOT NULL,
-         `sent` TINYINT(1) NOT NULL DEFAULT 0,
-         `sent_at` TIMESTAMP NULL DEFAULT NULL,
-         `last_error` TEXT NULL,
-         `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-         `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-         INDEX `idx_sent_reminder` (`sent`, `reminder_datetime`),
-         CONSTRAINT `fk_alert_ticket`
-            FOREIGN KEY (`tickets_id`) REFERENCES `glpi_tickets` (`id`)
-            ON DELETE CASCADE
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
-
+                  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+                  `tickets_id` int(11) unsigned NOT NULL DEFAULT '0',
+                  `target_email` varchar(255) NOT NULL,
+                  `reminder_date` datetime NOT NULL,
+                  `message` text,
+                  `is_sent` tinyint(1) NOT NULL DEFAULT '0',
+                  `date_creation` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (`id`),
+                  KEY `tickets_id` (`tickets_id`),
+                  KEY `is_sent` (`is_sent`),
+                  KEY `reminder_date` (`reminder_date`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
       $migration->addPostQuery($query);
-      $migration->executeMigration();
+   }
+   $migration->executeMigration();
+
+   // 2. Register Rights
+   if (class_exists('PluginAlertcreatorProfile')) {
+       PluginAlertcreatorProfile::createAdminAccess($_SESSION['glpiactiveprofile']['id']);
+   }
+
+   // 3. AUTOMATIC JS ASSETS INSTALLATION (COPIED FROM PURCHASEMANAGER LOGIC)
+   // This ensures the JS file is copied to the public folder where browsers can read it.
+   $js_source    = __DIR__ . '/js/alertcreator.js';
+   $js_dest_dir  = GLPI_ROOT . '/public/plugins/alertcreator/js';
+   $js_dest_file = $js_dest_dir . '/alertcreator.js';
+
+   if (!is_dir($js_dest_dir)) {
+       // Create directory with proper permissions
+       mkdir($js_dest_dir, 0755, true);
+   }
+   
+   if (file_exists($js_source)) {
+       // Copy the file to public assets
+       copy($js_source, $js_dest_file);
    }
 
    return true;
 }
 
 /**
- * Uninstallation hook for the plugin.
- * Removes the plugin's database tables.
- *
- * @return bool
+ * Plugin uninstallation process
+ * @return boolean
  */
 function plugin_alertcreator_uninstall() {
    global $DB;
-
-   if ($DB->tableExists('glpi_plugin_alertcreator_alerts')) {
-      $DB->dropTable('glpi_plugin_alertcreator_alerts');
-   }
+   
+   // Tables are usually kept on uninstall, but rights can be cleaned up
+   // $DB->delete('glpi_profilerights', ['name' => 'plugin_alertcreator']);
 
    return true;
 }
