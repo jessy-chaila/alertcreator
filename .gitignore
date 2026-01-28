@@ -1,2 +1,3 @@
 keys/licence.txt
-img/*
+public/img/*
+!public/img/.gitkeep
