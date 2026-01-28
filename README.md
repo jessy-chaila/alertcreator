@@ -30,6 +30,9 @@ After installation, go to **Administration > AlertCreator** (or via the Plugin c
     * *The plugin registers a task named `AlertCreator` that checks for pending emails every minute.*
 
 ## 💻 Installation
+ 
+> [!IMPORTANT]
+> **Please read the `HOWTOINSTALL.txt` file first** for the complete step-by-step setup procedure.
 
 Clone this repository into your `plugins/` directory:
 
